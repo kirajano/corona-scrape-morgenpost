@@ -1,0 +1,30 @@
+name: Scrape latest corona data from Berliner Morgenpost
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: '5,10,15,20,25,30,35,40,45,50,55,0 * * * *'
+
+jobs:
+  scheduled:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Morgenpost Corona
+      uses: actions/checkout@v2
+    - name: Get latest data for Germany, Europe and World
+      run: |-
+        echo "label,date,confirmed,recovered,deaths,delta_confirmed,delta_recovered,delta_deaths" > germany_covid.csv
+        curl -L https://interaktiv.morgenpost.de/data/corona/totals.v2.csv?t=38miy | grep germany >> germany_covid.csv
+        echo "label,date,confirmed,recovered,deaths,delta_confirmed,delta_recovered,delta_deaths" > europe_covid.csv
+        curl -L https://interaktiv.morgenpost.de/data/corona/totals.v2.csv?t=38miy | grep europe >> europe_covid.csv
+        echo "label,date,confirmed,recovered,deaths,delta_confirmed,delta_recovered,delta_deaths" > world_covid.csv
+        curl -L https://interaktiv.morgenpost.de/data/corona/totals.v2.csv?t=38miy | grep world >> world_covid.csv
+    - name: Commit and push when it changed
+      run: |-
+        git config user.name "Auto"
+        git config user.email "actions@users.noreply.github.com"
+        git add -A
+        timestamp=$(date -u)
+        git commit -m "Latest data on Covid: ${timestamp}" || exit 0
+        git push
